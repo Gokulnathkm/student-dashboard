@@ -1,11 +1,8 @@
 import React, { useState } from 'react';
-import API from '../api/api';
-import SubjectRow from '../components/SubjectRow';
+import api from '../api/api';
 import { useNavigate } from 'react-router-dom';
-import Card from '../components/Card';
-import PageHeader from '../components/PageHeader';
 
-export default function CreateClass(){
+export default function CreateClass() {
   const nav = useNavigate();
   const [name, setName] = useState('');
   const [year, setYear] = useState(new Date().getFullYear());
@@ -13,100 +10,109 @@ export default function CreateClass(){
   const [subjects, setSubjects] = useState([{ code: '', name: '' }]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [successMsg, setSuccessMsg] = useState('');
+  const [success, setSuccess] = useState('');
 
-  function updateSubject(idx, val){
-    setSubjects(s => s.map((it,i)=> i===idx ? val : it));
-  }
-  function addSubject(){ setSubjects(s => [...s, { code:'', name:'' }]); }
-  function removeSubject(idx){ setSubjects(s => s.filter((_,i)=> i!==idx)); }
+  const updateSubject = (idx, val) => {
+    setSubjects(s => s.map((it, i) => i === idx ? val : it));
+  };
+  const addSubject = () => setSubjects(s => [...s, { code: '', name: '' }]);
+  const removeSubject = (idx) => setSubjects(s => s.filter((_, i) => i !== idx));
 
-  function validate(){
-    if(!name.trim()) return "Class name is required";
-    if(!section.trim()) return "Section is required";
+  const validate = () => {
+    if (!name.trim()) return 'Class name is required';
+    if (!section.trim()) return 'Section is required';
     const hasInvalid = subjects.some(s => !s.code.trim() || !s.name.trim());
-    if(hasInvalid) return "All subject rows must have code and name";
+    if (hasInvalid) return 'All subjects must have code and name';
     return null;
-  }
+  };
 
-  async function handleSubmit(e){
+  const submit = async (e) => {
     e.preventDefault();
     setError(null);
-    setSuccessMsg('');
+    setSuccess('');
     const v = validate();
-    if(v){ setError(v); window.scrollTo(0,0); return; }
+    if (v) { setError(v); return; }
     setLoading(true);
-    try{
-      const payload = { name, year: Number(year), section, subjects };
-      await API.post('/classes', payload);
-      setSuccessMsg('Class created successfully');
-      setTimeout(()=> nav('/classes'), 900);
-    }catch(err){
+    try {
+      await api.post('/classes', { name, year: Number(year), section, subjects });
+      setSuccess('Class created successfully!');
+      setTimeout(() => nav('/classes'), 800);
+    } catch (err) {
       setError(err?.response?.data?.error || err.message || 'Server error');
-    }finally{
-      setLoading(false);
-    }
-  }
+    } finally { setLoading(false); }
+  };
 
   return (
-    <div className="max-w-3xl mx-auto p-6">
-      <PageHeader title="Create Class" subtitle="Define class meta and subjects — dynamic rows and validation included." actions={null} />
+    <div className="fade-in" style={{ maxWidth: 640 }}>
+      <div className="page-header">
+        <div>
+          <h1>Create Class</h1>
+          <p>Define class metadata and subjects</p>
+        </div>
+      </div>
 
-      {error && <div className="mb-4 p-3 bg-red-50 text-red-800 rounded-md">{error}</div>}
-      {successMsg && <div className="mb-4 p-3 bg-green-50 text-green-800 rounded-md">{successMsg}</div>}
+      {error && <div className="alert alert-error">{error}</div>}
+      {success && <div className="alert alert-success">{success}</div>}
 
-      <Card>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-3 gap-4">
-            <label className="col-span-3">
-              <div className="text-sm font-medium text-gray-700">Class name</div>
-              <input value={name} onChange={e=>setName(e.target.value)} placeholder="22MDC-A"
-                className="mt-1 w-full p-2 border rounded-md focus:ring-2 focus:ring-indigo-200" />
-            </label>
-
-            <label>
-              <div className="text-sm font-medium text-gray-700">Year</div>
-              <input type="number" value={year} onChange={e=>setYear(e.target.value)}
-                className="mt-1 w-full p-2 border rounded-md focus:ring-2 focus:ring-indigo-200"/>
-            </label>
-
-            <label>
-              <div className="text-sm font-medium text-gray-700">Section</div>
-              <input value={section} onChange={e=>setSection(e.target.value)} placeholder="A"
-                className="mt-1 w-full p-2 border rounded-md focus:ring-2 focus:ring-indigo-200"/>
-            </label>
+      <div className="card">
+        <form onSubmit={submit}>
+          <div className="input-group">
+            <label className="input-label">Class Name *</label>
+            <input value={name} onChange={e => setName(e.target.value)} placeholder="22MDC-A" className="input" required />
           </div>
 
-          <div>
-            <div className="mb-2 flex items-center justify-between">
-              <h3 className="text-md font-medium text-gray-700">Subjects</h3>
-              <button type="button" onClick={addSubject}
-                className="py-1 px-3 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">
-                + Add subject
-              </button>
+          <div className="grid-2">
+            <div className="input-group">
+              <label className="input-label">Year</label>
+              <input type="number" value={year} onChange={e => setYear(e.target.value)} className="input" />
             </div>
-
-            <div className="space-y-3">
-              {subjects.map((s, i) => (
-                <div key={i} className="p-3 border rounded-md bg-gray-50">
-                  <SubjectRow idx={i} subject={s} onChange={updateSubject} onRemove={removeSubject}/>
-                </div>
-              ))}
+            <div className="input-group">
+              <label className="input-label">Section *</label>
+              <input value={section} onChange={e => setSection(e.target.value)} placeholder="A" className="input" required />
             </div>
           </div>
 
-          <div className="flex items-center justify-end gap-3">
-            <button type="button" onClick={()=> { setName(''); setSection(''); setSubjects([{code:'',name:''}]); }}
-              className="py-2 px-4 border rounded-md">Reset</button>
+          <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <label className="input-label" style={{ margin: 0 }}>Subjects</label>
+            <button type="button" onClick={addSubject} className="btn btn-ghost btn-sm">+ Add Subject</button>
+          </div>
 
-            <button type="submit"
-              className={`py-2 px-4 rounded-md text-white ${loading ? 'bg-gray-400' : 'bg-brand'}`}
-              disabled={loading}>
-              {loading ? 'Creating...' : 'Create Class'}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
+            {subjects.map((s, i) => (
+              <div key={i} style={{
+                display: 'grid', gridTemplateColumns: '1fr 2fr auto', gap: 8,
+                padding: 12, borderRadius: 'var(--radius-sm)',
+                background: 'var(--surface-secondary)', border: '1px solid var(--border)'
+              }}>
+                <input
+                  placeholder="22MDC31"
+                  value={s.code}
+                  onChange={e => updateSubject(i, { ...s, code: e.target.value })}
+                  className="input"
+                />
+                <input
+                  placeholder="Subject name (e.g. DBMS)"
+                  value={s.name}
+                  onChange={e => updateSubject(i, { ...s, name: e.target.value })}
+                  className="input"
+                />
+                {subjects.length > 1 && (
+                  <button type="button" onClick={() => removeSubject(i)} className="btn btn-danger btn-sm btn-icon">✕</button>
+                )}
+              </div>
+            ))}
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+            <button type="button" onClick={() => {
+              setName(''); setSection(''); setSubjects([{ code: '', name: '' }]);
+            }} className="btn btn-secondary">Reset</button>
+            <button type="submit" disabled={loading} className="btn btn-primary">
+              {loading ? 'Creating…' : 'Create Class'}
             </button>
           </div>
         </form>
-      </Card>
+      </div>
     </div>
   );
 }

@@ -5,6 +5,8 @@ const cors = require('cors');
 const morgan = require('morgan');
 
 const authRoutes = require('./routes/auth');
+const authMeRouter = require('./routes/authMe');
+const profileRoutes = require('./routes/profile');
 const studentRoutes = require('./routes/students');
 const classRoutes = require('./routes/classes');
 const marksRoutes = require('./routes/marks');
@@ -16,19 +18,13 @@ app.use(express.json());
 
 // routes
 app.use('/api/auth', authRoutes);
+app.use('/api/auth', authMeRouter);
+app.use('/api/auth', profileRoutes);
 app.use('/api/students', studentRoutes);
 app.use('/api/classes', classRoutes);
 app.use('/api/marks', marksRoutes);
 
-// simple health check
+// health check
 app.get('/', (req, res) => res.send({ ok: true, message: 'Student Performance API' }));
 
 module.exports = app;
-
-// Mount auth/me helper route
-try {
-  const authMeRouter = require('./routes/authMe');
-  app.use('/api/auth', authMeRouter);
-} catch(e) {
-  console.error('Could not mount authMe route:', e);
-}
